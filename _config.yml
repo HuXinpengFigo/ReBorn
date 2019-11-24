@@ -95,6 +95,6 @@ theme: fluid
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
-  type: git
-  repo: git@git.lug.ustc.edu.cn:NisemonoFigo/nisemonofigo.gitlab.io.git
-  branch: master
+  # type: git
+  # repo: git@git.lug.ustc.edu.cn:NisemonoFigo/nisemonofigo.gitlab.io.git
+  # branch: master
