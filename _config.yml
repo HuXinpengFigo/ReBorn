@@ -13,7 +13,7 @@ timezone: ''
 
 # URL
 ## If your site is put in a subdirectory, set url as 'http://yoursite.com/child' and root as '/child/'
-url: http://yoursite.com
+url: https://figohxp.top
 root: /
 permalink: :year/:month/:day/:title/
 permalink_defaults:
@@ -95,6 +95,6 @@ theme: fluid
 # Deployment
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
-  # type: git
-  # repo: git@git.lug.ustc.edu.cn:NisemonoFigo/nisemonofigo.gitlab.io.git
-  # branch: master
+  type: git
+  repository: git@git.coding.net:figohxp/figohxp.coding.me.git
+  branch: master
