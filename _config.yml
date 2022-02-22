@@ -96,5 +96,5 @@ theme: fluid
 ## Docs: https://hexo.io/docs/deployment.html
 deploy:
   type: git
-  repository: git@git.coding.net:figohxp/figohxp.coding.me.git
+  repository: git@e.coding.net:figohxp/figohxp.coding.me.git #if stall in 'hero d', please check if the target url is up to date.
   branch: master

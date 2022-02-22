@@ -11,6 +11,8 @@ categories: 实习
 
 题目：
 
+<!-- more -->
+
 ```c++
 #include<iostream>
 using namespace std;

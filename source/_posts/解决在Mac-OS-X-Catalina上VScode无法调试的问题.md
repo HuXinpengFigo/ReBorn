@@ -139,5 +139,5 @@ categories: 代码
 
 ----
 
-##### 记住更改完之后需要 Command + B 编译
+##### 记住更改完之后需要 Command + shift + B 编译
 
