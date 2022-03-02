@@ -10,6 +10,8 @@ tags: [Spark,大数据,conda]
 
 运行`spark-sql`或者`spark-shell`的时候经常会出现满屏的`INFO`输出，影响对结果的阅读。
 
+<!-- more -->
+
 ![Xnip2021-10-17_11-42-18](/img/Xnip2021-10-17_11-42-18.png)
 
 这个时候只需要在`spark-conf/conf/`下设置好`log4j.properties`文件中的`log4j.rootCategory`就可以解决，甚至进行深度研究后可以自由设置应该展示哪个部分的信息。

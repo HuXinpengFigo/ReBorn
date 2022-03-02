@@ -12,6 +12,8 @@ tags: [Hive,大数据]
 hive --service metastore -p <your port>
 ```
 
+<!-- more -->
+
 后台启动`metastore`
 
 ```sh
