@@ -1,7 +1,7 @@
 ---
 title: LeetCode刷题笔记--Top 100 Liked
 date: 2022-03-02 21:36:46
-tags: index_img: /img/LeetCode_Sharing.png
+index_img: /img/LeetCode_Sharing.png
 banner_img: /img/h4ear4i3g4q7r04utgpm.png
 tags: [C++,牛课网]
 categories: 实习
@@ -52,5 +52,3 @@ public:
     }
 };
 ```
-
-Wait
