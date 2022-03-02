@@ -3,13 +3,15 @@ title: LeetCode刷题笔记--Top 100 Liked
 date: 2022-03-02 21:36:46
 index_img: /img/LeetCode_Sharing.png
 banner_img: /img/h4ear4i3g4q7r04utgpm.png
-tags: [C++,牛课网]
+tags: [C++,LeetCode]
 categories: 实习
 ---
 
 ### 392. Is Subsequence
 
 #### Description
+
+<!-- more -->
 
 > A **subsequence** of a string is a new string that is formed from the original string by deleting some (can be none) of the characters without disturbing the relative positions of the remaining characters. (i.e., `"ace"` is a subsequence of `"abcde"` while `"aec"` is not).
 
