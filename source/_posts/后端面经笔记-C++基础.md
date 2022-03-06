@@ -1,8 +1,8 @@
 ---
-title: 阿里后端面经笔记--C++基础
+title: 后端面经笔记--C++基础与并发
 date: 2022-03-05 17:32:36
-index_img: /img/home_banner_1.png
-banner_img: /img/home_banner_1.png
+index_img: /img/Backend-solution.webp
+banner_img: /img/5-Backend-Solutions-for-Web-and-Mobile-Applications-to-Try-Firebase-Alternatives.webp
 tags: [C++,面经]
 categories: 实习
 ---
@@ -171,8 +171,4 @@ int b=a;
 > * 线程有自己的私有属性TCB，线程id，寄存器、硬件上下文，而进程也有自己的私有属性进程控制块PCB，这些私有属性是不被共享的，用来标示一个进程或一个线程的标志。
 
 参考：[进程、线程和协程的理解](https://www.cnblogs.com/guolei2570/p/8810536.html)
-
-## 消息队列
-
-
 
