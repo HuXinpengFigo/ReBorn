@@ -178,3 +178,60 @@ public:
 };
 ````
 
+### JZ40 最小的K个数
+
+#### 描述
+
+> 给定一个长度为 n 的可能有重复值的数组，找出其中不去重的最小的 k 个数。例如数组元素是4,5,1,6,2,7,3,8这8个数字，则最小的4个数字是1,2,3,4(任意顺序皆可)。
+>
+> 数据范围：0≤*k*,*n*≤10000，数组中每个数的大小 0≤*v**a**l*≤1000
+>
+> 要求：空间复杂度 O*(*n*)* ，时间复杂度 O(nlogn)
+
+#### 思路
+
+> 对数组[left, right]一次快排partition过程可得到，[left, p), p, [p+1, right)三个区间,[l,p)为小于等于p的值
+> [p+1,right)为大于等于p的值。
+> 然后再判断p，利用二分法:
+>
+> * 如果[left,p), p，也就是p+1个元素（因为下标从0开始），如果p+1 == k, 找到答案
+> * 如果p+1 < k, 说明答案在[p+1, right)区间内
+> * 如果p+1 > k , 说明答案在[left, p)内
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    int partition(vector<int> &input,int left, int right) { // 注意对vector要用引用
+        int pivot = right - 1; //注意传进来的right在此处-1最佳
+        int i = left;
+        for (int j = left; j < pivot; j++) {
+            if ( input[j] < input[pivot] ){
+                swap(input[i],input[j]);
+                i++;
+            }
+        }
+        swap(input[i],input[pivot]);
+        return i;
+    }
+vector<int> GetLeastNumbers_Solution(vector<int> input, int k) {
+    vector<int> nullRet;
+    if ( k==0 || input.size() < k) {
+        return nullRet;
+    }
+    int left = 0, right = input.size();
+    while( left < right ) {
+        int p = partition(input,left, right);
+        if ( p + 1 == k ) {
+            return vector<int>({input.begin(), input.begin()+k});
+        } else if ( p + 1 < k ) {
+            left = p+1;
+        } else if ( p + 1 > k ) {
+            right = p;
+        }
+    }
+    return nullRet;
+}
+};
+```
