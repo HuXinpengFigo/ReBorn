@@ -203,8 +203,8 @@ gitalk:
 # You can get your appid and appkey from https://leancloud.cn
 # More info available at https://valine.js.org
 valine:
-  appid:  SE4lHK5UuXzeie0wmc3Psg3O-gzGzoHsz # your leancloud application appid
-  appkey:  8vkNICVR2k3p5vhiGRIbjcxg # your leancloud application appkey
+  appid:   # your leancloud application appid
+  appkey:   # your leancloud application appkey
   notify: false # mail notifier, See: https://github.com/xCss/Valine/wiki
   verify: false # Verification code
   placeholder: 说点什么 # comment box placeholder
