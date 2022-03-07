@@ -235,3 +235,55 @@ vector<int> GetLeastNumbers_Solution(vector<int> input, int k) {
 }
 };
 ```
+### 数据流中的中位数
+
+#### 描述
+
+> 如何得到一个数据流中的中位数？如果从数据流中读出奇数个数值，那么中位数就是所有数值排序之后位于中间的数值。如果从数据流中读出偶数个数值，那么中位数就是所有数值排序之后中间两个数的平均值。我们使用Insert()方法读取数据流，使用GetMedian()方法获取当前读取数据的中位数。
+
+#### 思路
+
+利用优先队列来创造一个大顶堆一个小顶堆，在插入的时候就进行控制。要快速得到数据流的中位数，要保证两个优先队列长度要么相等要么差距为1.利用大顶堆队头作为标志，如果小于大顶堆队队头，就将该元素插入大顶堆当中；如果大于大顶堆队头，则将元素插入小顶堆当中。
+
+最后小顶堆的长度只能小于或等于大顶堆，不能大于大顶堆，出现超过的情况，哪个更多，就把哪个的top插入到另一个之中。
+
+最后按照大顶堆和小顶堆的长度来判断返回两个top除以2或者大顶堆的top
+
+> 注意大顶堆（大根堆）是Top节点大于所有子节点的堆，所以是从头节点开始**递减**，用`less`关键字；
+>
+> 小顶堆（小根堆）则相反，Top节点小于所有子节点，从头节点开始**递增**，用`greater`关键字。
+
+#### 代码
+
+```c++
+#include <queue>
+class Solution {
+public:
+    priority_queue<int, vector<int>, less<int>> p;//大顶堆
+    priority_queue<int, vector<int>, greater<int>> q;//小顶堆
+
+    void Insert(int num)
+    {
+        if(p.empty()||num<=p.top())
+            p.push(num);
+        else
+            q.push(num);
+        if(p.size() == q.size()+2){
+            q.push(p.top());
+            p.pop();
+        }
+        if(p.size()+1 == q.size()){
+            p.push(q.top());
+            q.pop();
+        }
+    }
+
+    double GetMedian()
+    { 
+        if(p.size()==q.size())
+            return (p.top()+q.top())/2.0;//注意此处一定要用2.0,不然结果是int，会把小数部分截去
+        else
+            return p.top();
+    }
+};
+```
