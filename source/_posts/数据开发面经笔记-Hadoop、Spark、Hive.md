@@ -152,7 +152,7 @@ categories: 实习
 >
 >       通常对于"小文件问题"的回应会是：使用序列文件（SequenceFile）。这种方法的思路是，使用文件名（filename）作为key，并且文件内容（file contents）作为value，如下图。在实践中这种方式非常有效。我们回到10,000个100KB小文件问题上，你可以编写一个程序将它们放入一个单一的SequenceFile，然后你可以流式处理它们（直接处理或使用MapReduce）操作SequenceFile。
 >
->       ![image](/Users/figo/fluid/themes/fluid/source/img/0a6e3ff0d40e42bc581c88b6cada856825ea325br1-512-512v2_uhq.png)
+>       ![image](/img/0a6e3ff0d40e42bc581c88b6cada856825ea325br1-512-512v2_uhq.png)
 >
 >    3. HBase
 >
@@ -453,7 +453,7 @@ HDFS总共支持**Lazy_Persist**、**All_SSD**、**One_SSD**、**Hot**、**Warm*
 - Maps：和Java中的Map相同，即存储K-V对的；
 - Arrays：数组；
 
-![img](/Users/figo/fluid/themes/fluid/source/img/778187-20180115161529224-1291199969.png)
+![img](/img/778187-20180115161529224-1291199969.png)
 
 #### Hive文件格式
 
@@ -477,11 +477,11 @@ PARQUET //列出存储格式文件，Hive0.13以后开始支持
 >
 > order by一般配合group by使用，而group by需要配合[聚合函数](https://so.csdn.net/so/search?q=聚合函数&spm=1001.2101.3001.7020)使用，举个例子：
 >
-> ![img](/Users/figo/fluid/themes/fluid/source/img/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xTQjE5OTMwNzA2,size_16,color_FFFFFF,t_70.png)
+> ![img](/img/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L0xTQjE5OTMwNzA2,size_16,color_FFFFFF,t_70.png)
 >
 > 而sort by分组时需要使用distribute by，和group by类似，但是它不需要配合聚合函数使用，也就不影响原数据的函数，这点和开窗函数有点类似，如下：
 >
-> ![img](/Users/figo/fluid/themes/fluid/source/img/distributed_by.png)
+> ![img](/img/distributed_by.png)
 >
 > distribute by还有个简化版，当distribute by和sort by的字段相同时，可以简写为cluster by。
 >
@@ -529,3 +529,399 @@ PARQUET //列出存储格式文件，Hive0.13以后开始支持
 >
 > 一个**文件**对应一个**分桶**
 
+### Hive窗口函数
+
+> 有时，想在不影响原有数据粒度形态的前提下，在一个表中实现 得到按照一定规则分析处理后想要的值。
+> 于是便于分析的 **窗口函数** 应运而生。
+>
+> 用 大白话 说就是： 既想要聚合函数作用后的数据结果，
+>
+> 又想展示聚合前的数据，即不想承担聚合函数带来的数据变为"一行" 的后果。
+>
+> 这种 **既要又要** 的复杂要求，那就用 **窗口函数** 来满足！
+
+#### 常用场景
+
+```sql
+sum(...)over(...)  #常用来多维度分组求和、求累加值等
+count(...)over(...)  #常用来多维度分组计数、计算汇总计数等
+min、max、avg(...)over(...)  #常用来计算指定分组列对应某指标的最大、最小、平均值
+```
+
+下面常用于求分组中涉及[排序](https://www.nowcoder.com/jump/super-jump/word?word=排序)相关场景：
+
+```sql
+lag()over(...)
+lead()over(...)
+row_number()over(...)
+rank()over(...)
+```
+
+> lag() over() 与 lead() over() 函数是跟偏移量相关的两个[分析](https://so.csdn.net/so/search?q=分析&spm=1001.2101.3001.7020)函数，通过这两个函数**可以在一次查询中取出同一字段的前 N 行的数据 (lag) 和后 N 行的数据 (lead) 作为独立的列, 从而更方便地进行进行数据过滤。**
+>
+> [row_number() OVER(PARTITION BY)函数介绍](https://blog.csdn.net/631799/article/details/7419797)：求排序的开窗函数，与**rank()OVER()**做对比，rank有并列第一则接下来是第三，row_number并列第一只会显示一个，而**dense_rank()**是连续排序，有两个第二名时仍然跟着第三名。
+
+#### **窗口函数语法**
+
+```sql
+# 语法形式申明：
+window_func() over (partition by [<col1>,<col2>,…]
+[order by <col1>[asc/desc], <col2>[asc/desc]…] <窗口选取语句: windowing_clause>)
+```
+
+#### **①** **window_func**:
+
+- 常用聚合函数有： 
+
+  sum()、count()、avg()、max() 
+
+-  常用序列函数有： 
+
+  row_number()、rank()、dense_rank()、first_value()、last_value()、lag()、lead()
+
+#### **② partition by [<col1>,<col2>,…] ：** 
+
+-  指定开窗的列，即用于分组的列名。 
+-  可选项。即使不指定也可以正常使用窗口函数，此时将整个结果集当做一个大的窗口来用。 
+-  可认为是查询分区子句，较类似group by：都是将数据按照指定的列进行分组，分区列的值相同的行被视为在同一个窗口内。 
+
+####  **③ order by <col1>[asc/desc], <col2>[asc/desc]…：** 
+
+-  可选项。指定数据在一个窗口内如何[排序]()，会让输入的数据强制[排序]()，默认asc升序。  
+
+####  **④ windowing_clause：** 
+
+-  可选项。窗口选取语句，指定了窗口函数作用的范围，可以理解为比partition by更细粒度的划分分组范围。 
+- 选取关键词：
+  -  通常用rows指定开窗方式 
+  -  preceding ：向前 
+  -  following：向后 
+  -  current row：当前行 
+  -  unbounded preceding：第一行 
+  -  unbounded following：最后一行 
+- 两种使用方式：
+  -  rows between x preceding / following and y preceding / following：表示窗口范围是从前或后x行到前或后y行，区间表示法即：[x,y]。 
+  -  rows x preceding / following：窗口范围是从前或后第x行到当前行。区间表示法即[-x,0]、[0,x]。 
+
+###  **注意点：** 
+
+####  **①** **窗口函数** 
+
+- ####  不能和同级别的聚合函数一起使用。 
+
+- ####  不能嵌套使用窗口函数和聚合函数。  
+
+####  **② partition by**  
+
+-  与聚合函数group by不同的地方：不会减少表中记录的行数，而group by是对原始数据进行聚合统计，一般只有一条反映统计值的结果（每组返回一条）。 
+-  over之前的函数在每一个分组之内进行，若超出分组，函数会重新计算。
+
+####  **③** **order by** 
+
+-  order by默认情况下聚合从起始行到当前行的数据 
+-  该子句对于[排序]()类函数是必须的，因为如果数据无序，这些函数的结果没有任何意义。
+
+####  **④ 窗口选取从句** 
+
+-  区间一定从前到后，不能从后到前。 
+- 从句缺失时：
+  -  order by 指定，窗口从句缺失，则窗口的默认值为range between unbounded preceding and current row，也就是从第一行到当前行； 
+  -  order by 和窗口从句如果都缺失，则窗口的默认值为range between unbounded preceding and unbounded following，即从第一行到最后一行。 
+-  序列函数不支持窗口选取子句。
+
+ **⑤ 执行顺序** 
+
+-  from -> where -> group by -> having -> select -> **window func** -> order by -> limit 
+-  可以理解为窗口函数是将select中的结果数据集当做 输入 再次加工处理。
+
+参考：[讲懂高频Hive：窗口函数（一）](https://www.nowcoder.com/discuss/823406?type=post&order=recall&pos=&page=1&ncTraceId=&channel=-1&source_id=search_post_nctrack&gio_id=D68F5CC4A5088E8311C5FF791A330F3B-1647483296687)
+
+### Hive 存储引擎、执行引擎和优化器
+
+> - 存储方面：textfile、orcfile、rcfile、parquet、sequencefile
+> - 执行引擎：mr (MapReduce)、tez、spark
+> - 词法解析： calcite、cbo
+> - 优化：mapjoin
+> - 自定义函数：udf
+> - sql语法或自带函数
+
+### Hive各种join之间的关系与使用
+
+> **SQL join 用于根据两个或多个表中的列之间的关系，从这些表中查询数据。**
+>
+> - JOIN: 如果表中有至少一个匹配，则返回行
+> - LEFT JOIN: 即使右表中没有匹配，也从左表返回所有的行
+> - RIGHT JOIN: 即使左表中没有匹配，也从右表返回所有的行
+> - FULL JOIN: 只要其中一个表中存在匹配，就返回行
+
+#### Hive map join
+
+> MapJoin是Hive的一种优化操作，其适用于**小表JOIN大表**的场景，由于表的JOIN操作是在Map端且在内存进行的，所以其并不需要启动Reduce任务也就不需要经过shuffle阶段，从而能在一定程度上节省资源提高JOIN效率。
+>
+> （在Hive0.11后，Hive**默认启动**该优化，也就是不在需要显示的使用MAPJOIN标记，其会在必要的时候触发该优化操作将普通JOIN转换成MapJoin）
+
+### Hive (数据仓库) 与数据库的区别
+
+>1. **存储数据位置：**Hive在HDFS中，数据库的数据存储在块设备上或者本地文件系统中。
+>
+>2. **查询语言：**Hive为了方便一些开发者使用，通过将HQL转为MapReduce查询，但是HQL与常规的SQL语句使用起来还是有不同的地方。
+>
+>3. **数据更新：**因为Hive是数据仓库，本身性质就是“读多写少”，所以在一些以前的版本中，它并不支持insert into插入数据以及update更新数据的。但是数据库通常使用起来就是需要经常修改以及添加的。
+>
+>4. **计算引擎：**Hive的架构如下，Hive实际上就是将用户输入的HQL语句转化为MapReduce程序来运行，但是数据库有自己的执行引擎。
+>
+>   ![img](/img/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzQxNTcxOTAw,size_16,color_FFFFFF,t_70.png)
+>
+>5. **索引：**在Hive中并没有索引这个概念，当Hive需要访问数据中某些符合特定条件的特定值时，需要对全盘进行暴力检索，所以访问延迟较高，但Hive引入了MapReduce，可以并行处理数据。在数据库中，虽不可以并行处理数据，但是可以在数据中建立索引。因此，对于少量特定条件的数据访问时，数据库延迟低。但是大数据量还是选择Hive。
+>
+>6. **执行延迟：**Hive中没有索引不说，MapReduce的这个框架本身就具有很高的延迟。相对于数据库来说，延迟比较高。但是当数据量很大，超出了数据库的处理能力范围时，Hive的并行计算就具有很大的优势了。
+>
+>7. **可扩展性：**由于Hive是建立在Hadoop集群上的，所以它的扩展能力和Hadoop一样。所以可以想象，Hadoop集群的节点可以有多少个？但是数据库本身由于ACID语义的限制，就Oracle在理论上最多也只能扩展100台。
+
+参考：[Hive（数据仓库）与数据库的区别](https://blog.csdn.net/qq_41571900/article/details/84640136)
+
+## SPARK
+
+> Spark是一个基于内存的，用于大规模数据处理（离线计算、实时计算、快速查询（交互式查询））的统一分析引擎。它内部的组成模块，包含SparkCore，SparkSQL，SparkStreaming，SparkMLlib，SparkGraghx等。
+>
+> 
+>
+> **Spark特点：**
+>
+> * **快：**Spark计算速度是MapReduce计算速度的10-100倍；
+> * **易用：**MR支持1种计算模型，Spsark支持更多的计算模型(算法多)；
+> * **通用：**Spark 能够进行离线计算、交互式查询（快速查询）、实时计算、机器学习、图计算；
+> * **兼容性：**Spark支持大数据中的Yarn调度，支持mesos。可以处理hadoop计算的数据。
+
+![image-20220317213839838](/img/image-20220317213839838.png)
+
+### Spark基本概念
+
+> * Application：表示你的应用程序
+> * Driver：表示main()函数，创建SparkContext。由SparkContext负责与ClusterManager通信，进行资源的申请，任务的分配和监控等。程序执行完毕后关闭SparkContext
+>
+> * Executor：某个Application运行在Worker节点上的一个进程，该进程负责运行某些task，并且负责将数据存在内存或者磁盘上。在Spark on Yarn模式下，其进程名称为 CoarseGrainedExecutor Backend，一个CoarseGrainedExecutor Backend进程有且仅有一个executor对象，它负责将Task包装成taskRunner，并从线程池中抽取出一个空闲线程运行Task，这样，每个CoarseGrainedExecutorBackend能并行运行Task的数据就取决于分配给它的CPU的个数。
+> * Worker：集群中可以运行Application代码的节点。在Standalone模式中指的是通过slave文件配置的worker节点，在Spark on Yarn模式中指的就是NodeManager节点。
+> * Task：在Executor进程中执行任务的工作单元，多个Task组成一个Stage
+> * Job：包含多个Task组成的并行计算，是由Action行为触发的
+> * Stage：每个Job会被拆分很多组Task，作为一个TaskSet，其名称为Stage
+> * DAGScheduler：根据Job构建基于Stage的DAG，并提交Stage给TaskScheduler，其划分Stage的依据是RDD之间的依赖关系
+> * TaskScheduler：将TaskSet提交给Worker（集群）运行，每个Executor运行什么Task就是在此处分配的。
+
+### Spark部署模式
+
+> 1. **Local**:运行在一台机器上，通常是练手或者测试环境。
+> 2. **Standalone**:构建一个基于Mster+Slaves的资源调度集群，Spark任务提交给Master运行。是Spark自身的一个调度系统。
+> 3. **Yarn**: Spark客户端直接连接Yarn，不需要额外构建Spark集群。有yarn-client和yarn-cluster两种模式，主要区别在于：Driver程序的运行节点。
+> 4. **Mesos**：国内大环境比较少用。
+
+### Spark提交作业参数
+
+> Spark任务是采用的Shell脚本进行提交
+>
+> - executor-cores —— 每个executor使用的内核数，默认为1，官方建议2-5个
+> - num-executors —— 启动executors的数量，默认为2
+> - executor-memory —— executor内存大小，默认1G
+> - driver-cores —— driver使用内核数，默认为1
+> - driver-memory —— driver内存大小，默认512M
+
+### Spark提交作业流程
+
+>Spark的任务提交方式实际上有两种，分别是YarnClient模式和YarnCluster模式。
+
+#### YarnClient
+
+> 在YARN Client模式下，Driver在任务提交的本地机器上运行，Driver启动后会和**ResourceManager**通讯申请启动**ApplicationMaster**，随后ResourceManager分配**container**，在合适的**NodeManager**上启动ApplicationMaster，此时的ApplicationMaster的功能相当于一个ExecutorLaucher，**只负责**向ResourceManager申请Executor内存。
+>
+>  
+>
+> ResourceManager接到ApplicationMaster的资源申请后会分配container，然后ApplicationMaster在资源分配指定的NodeManager上启动Executor进程，Executor进程启动后会向Driver反向注册，Executor全部注册完成后Driver开始执行main函数，之后执行到Action算子时，触发一个job，并根据宽依赖开始划分stage，每个stage生成对应的taskSet，之后将task分发到各个Executor上执行。
+>
+> ![image-20220318102708067](/img/image-20220318102708067.png)
+
+#### YarnCluster
+
+> 在YARN Cluster模式下，任务提交后会和**ResourceManager**通讯申请启动**ApplicationMaster**，随后ResourceManager分配**container**，在合适的**NodeManager**上启动ApplicationMaster，此时的ApplicationMaster就是**Driver**。
+>
+>  
+>
+> Driver启动后向ResourceManager申请Executor内存，ResourceManager接到ApplicationMaster的资源申请后会分配container，然后在合适的NodeManager上启动Executor进程，Executor进程启动后会向Driver反向注册，Executor全部注册完成后Driver开始执行main函数，之后执行到Action算子时，触发一个job，并根据宽依赖开始划分stage，每个stage生成对应的taskSet，之后将task分发到各个Executor上执行。
+>
+> ![image-20220318102856431](/img/image-20220318102856431.png)
+
+#### yarn-client 和 yarn-cluster 的异同 
+
+> 1. 从广义上讲，yarn-cluster 适用于生产环境。而 yarn-client 适用于交互和调试，也就是希望快速地看到 application 的输出。 
+> 2. 从深层次的含义讲，yarn-cluster 和 yarn-client 模式的区别其实就是 Application Master 进程的区别，yarn-cluster 模式下，driver 运行在 AM(Application Master)中，它负责向 YARN 申请资源，并监督作业的运行状况。当用户提交了作业之后，就可以关掉 Client，作业会继续在 YARN 上运行。然而 yarn-cluster 模式不适合运行交互类型的作业。而 yarn-client 模式下，Application Master 仅仅向 YARN 请求 executor，Client 会和请求的 container 通信来调度他们工作，也就是说 Client 不能离开。
+
+#### Spark on Yarn 优势
+
+> * Spark 支持资源动态共享，运行于 Yarn 的框架都共享一个集中配置好的资源池 
+> * 可以很方便的利用 Yarn 的资源调度特性来做分类·，隔离以及优先级控制负载，拥有更灵活的调度策略
+> * Yarn 可以自由地选择 executor 数量 
+> * Yarn 是唯一支持 Spark 安全的集群管理器（Mesos???），使用 Yarn，Spark 可以运行于 Kerberized Hadoop 之上，在它们进程之间进行安全认证
+
+### Spark的任务执行流程
+
+> 1. 构建Spark Application的运行环境（启动SparkContext），**SparkContext**向资源管理器（可以是Standalone、Mesos或YARN）注册并申请运行Executor资源；
+>
+> 2. 资源管理器分配**Executor**资源并启动**StandaloneExecutorBackend**，Executor运行情况将随着心跳发送到资源管理器上；
+>
+> 3. SparkContext构建成**DAG**图，将DAG图分解成Stage，并把Taskset发送给Task Scheduler。Executor向SparkContext申请Task
+>
+> 4. **Task Scheduler**将Task发放给Executor运行同时**SparkContext**将应用程序代码发放给Executor。
+>
+> 5. Task在**Executor**上运行，运行完毕释放所有资源。
+>
+> ![img](/img/1411500-20190519213716709-233373174.png)
+
+### spark-submit的时候如何引入外部jar包
+
+> * 在通过spark-submit提交任务时，可以通过添加**配置参数**来指定
+> * --**driver-class-path** 外部jar包
+> * --**jars** 外部jar包
+
+### Spark 如何防止内存溢出
+
+#### driver端的内存溢出
+
+> * 可以增大driver的内存参数：spark.driver.memory (default 1g)
+> * 这个参数用来设置Driver的内存。在Spark程序中，SparkContext，DAGScheduler都是运行在Driver端的。对应rdd的Stage切分也是在Driver端运行，如果用户自己写的程序有过多的步骤，切分出过多的Stage，这部分信息消耗的是Driver的内存，这个时候就需要调大Driver的内存。
+
+####  map过程产生大量对象导致内存溢出
+
+> * 这种溢出的原因是在单个map中产生了大量的对象导致的，例如：rdd.map(x=>for(i <- 1 to 10000) yield i.toString)，这个操作在rdd中，每个对象都产生了10000个对象，这肯定很容易产生内存溢出的问题。针对这种问题，在不增加内存的情况下，可以通过减少每个Task的大小，以便达到每个Task即使产生大量的对象Executor的内存也能够装得下。具体做法可以在会产生大量对象的map操作之前调用repartition方法，分区成更小的块传入map。例如：rdd.repartition(10000).map(x=>for(i <- 1 to 10000) yield i.toString)。
+>
+> 面对这种问题注意，不能使用rdd.coalesce方法，这个方法只能减少分区，不能增加分区，不会有shuffle的过程。
+
+#### 数据不平衡导致内存溢出
+
+> 数据不平衡除了有可能导致内存溢出外，也有可能导致性能的问题，解决方法和上面说的类似，就是调用repartition重新分区。这里就不再累赘了。
+
+####  shuffle后内存溢出
+
+> shuffle内存溢出的情况可以说都是shuffle后，单个文件过大导致的。在Spark中，join，reduceByKey这一类型的过程，都会有shuffle的过程，在shuffle的使用，需要传入一个partitioner，大部分Spark中的shuffle操作，**默认**的partitioner都是**HashPatitioner**，默认值是父RDD中最大的分区数,这个参数通过spark.default.parallelism控制(在spark-sql中用spark.sql.shuffle.partitions) ， spark.default.parallelism参数只对HashPartitioner有效，所以如果是别的Partitioner或者自己实现的Partitioner就不能使用spark.default.parallelism这个参数来控制shuffle的并发量了。如果是别的partitioner导致的shuffle内存溢出，就需要从partitioner的代码**增加partitions的数量**。
+
+#### standalone模式下资源分配不均匀导致内存溢出
+
+> 在standalone的模式下如果配置了--total-executor-cores 和 --executor-memory 这两个参数，但是没有配置--executor-cores这个参数的话，就有可能导致，每个Executor的memory是一样的，但是cores的数量不同，那么在cores数量多的Executor中，由于能够同时执行多个Task，就容易导致内存溢出的情况。这种情况的解决方法就是同时配置**--executor-cores**或者**spark.executor.cores**参数，确保Executor资源分配均匀。
+
+#### 使用rdd.persist(StorageLevel.MEMORY_AND_DISK_SER)代替rdd.cache()
+
+>rdd.cache()和rdd.persist(Storage.MEMORY_ONLY)是等价的，在内存不足的时候rdd.cache()的数据会丢失，再次使用的时候会重算，而rdd.persist(StorageLevel.MEMORY_AND_DISK_SER)在内存不足的时候会存储在磁盘，避免重算，只是消耗点IO时间。
+
+### Spark中的RDD (Resilient Distributed Datasets)
+
+> RDD是**弹性分布式数据集**，是Spark中最基本的数据抽象，代表一个不可变、可分区、里面的元素可并行计算的集合。
+>
+>  
+>
+> 作用：提供了一个抽象的数据模型，将具体的应用逻辑表达为一系列转换操作(函数)。另外不同RDD之间的转换操作之间还可以形成依赖关系，进而实现管道化，从而避免了中间结果的存储，大大降低了数据复制、磁盘IO和序列化开销，并且还提供了更多的API(map/reduec/filter/groupBy...)。
+>
+>  
+>
+> RDD在Lineage依赖方面分为两种Narrow Dependencies与Wide Dependencies，用来解决数据容错时的高效性以及划分任务时候起到重要作用。
+>
+> 
+>
+> **一个 RDD 代表一个可以被分区的只读数据集。RDD 内部可以有许多分区(partitions)，每个分区又拥有大量的记录(records)**。
+
+#### RDD五大特性
+
+> 1. dependencies: 建立 RDD 的依赖关系，主要 RDD 之间是宽窄依赖的关系，具有窄依赖关系的 RDD 可以在同一个 stage 中进行计算。 
+>
+> 2. partition: 一个 RDD 会有若干个分区，分区的大小决定了对这个 RDD 计算的粒度，每个 RDD 的分区的计算都在一个单独的任务中进行。 
+>
+> 3. preferedlocations: 按照“移动数据不如移动计算”原则，在 Spark 进行任务调度的时候，优先将任务分配到数据块存储的位置。
+>
+> 4. compute: Spark 中的计算都是以分区为基本单位的，compute 函数只是对迭代器进行复合，并不保存单次计算的结果。 
+>
+> 5. partitioner: 只存在于（K,V）类型的 RDD 中，非（K,V）类型的 partitioner 的值就是 None。
+
+#### RDD算子
+
+> RDD 的**算子**主要分成2类，**action 和 transformation**。这里的算子概念，可以理解成就是**对数据集的变换**。
+>
+> 
+>
+> action 会触发真正的作业提交，而 transformation 算子是不会立即触发作业提交的。每一个 transformation 方法返回一个新的 RDD。只是某些 transformation 比较复杂，会包含多个子 transformation，因而会生成多个 RDD。这就是实际 RDD 个数比我们想象的多一些 的原因。通常是，当遇到 action 算子时会触发一个job的提交，然后反推回去看前面的 transformation 算子，进而形成一张有向无环图。
+
+### Spark为什么快，Spark SQL 一定比 Hive 快吗
+
+> **Spark SQL** **比 Hadoop Hive** **快**，是有一定条件的，而且不是 Spark SQL 的引擎比 Hive 的引擎快，相反，Hive的**HQL引擎**还比Spark SQL的引擎**更快**。关键还是在于Spark本身快。
+>
+>  
+>
+> **消除了冗余的 HDFS** **读写**: Hadoop 每次 shuffle 操作后，必须写到磁盘，而 Spark 在 shuffle 后不一定落盘，可以 cache 到内存中，以便迭代时使用。如果操作复杂，很多的 shufle 操作，那么 Hadoop 的读写 IO 时间会大大增加，也是 Hive 更慢的主要原因了。
+>
+> 消除了冗余的 MapReduce 阶段: Hadoop 的 shuffle 操作一定连着完整的 MapReduce 操作，冗余繁琐。而 Spark 基于 RDD 提供了丰富的算子操作，且 reduce 操作产生 shuffle 数据，可以缓存在内存中。
+>
+> **JVM** **的优化**: Hadoop 每次 MapReduce 操作，启动一个 Task 便会启动一次 JVM，基于进程的操作。而 Spark 每次 MapReduce 操作是基于线程的，只在启动 Executor 是启动一次 JVM，内存的 Task 操作是在线程复用的。每次启动 JVM 的时间可能就需要几秒甚至十几秒，那么当 Task 多了，这个时间 Hadoop 不知道比 Spark 慢了多少。
+>
+> 记住一种反例 考虑一种极端查询:
+>
+> Select month_id, sum(sales) from T group by month_id;
+>
+> 这个查询只有一次 shuffle 操作，此时，也许 Hive HQL 的运行时间也许比 Spark 还快，反正 shuffle 完了都会落一次盘，或者都不落盘。
+>
+>  
+>
+> 结论 Spark 快不是绝对的，但是绝大多数，Spark 都比 Hadoop 计算要快。这主要得益于**其对** **mapreduce** **操作的优化以及对 JVM** **使用的优化**。
+
+### Spark调优
+
+#### 资源参数调优
+
+> * num-executors：设置Spark作业总共要用多少个Executor进程来执行
+> * executor-memory：设置每个Executor进程的内存
+> * executor-cores：设置每个Executor进程的CPU core数量
+> * driver-memory：设置Driver进程的内存
+> * spark.default.parallelism：设置每个stage的默认task数量
+
+#### 开发调优
+
+> * 避免创建重复的RDD
+> * 尽可能复用同一个RDD
+> * 对多次使用的RDD进行持久化
+> * 尽量避免使用shuffle类算子
+> * 使用map-side预聚合的shuffle操作
+> * 使用高性能的算子
+
+### Spark Shuffle
+
+> 混洗，官方定义是：一种让数据重新分布以使得某些数据被放在同一分区里的一种机制。Shuffle的过程中，存在着大量的网络消耗传输数据，会在磁盘上产生大量的中间文件。
+
+#### 调优参数
+
+> **spark.shuffle.file.buffer**
+> **参数说明**：**该参数用于设置shuffle write task的BufferedOutputStream的buffer缓冲大小**（默认是32K）。将数据写到磁盘文件之前，会先写入buffer缓冲中，待缓冲写满之后，才会溢写到磁盘。
+> **调优建议**：如果作业可用的内存资源较为充足的话，可以适当增加这个参数的大小（比如64k），从而减少shuffle write过程中溢写磁盘文件的次数，也就可以减少磁盘IO次数，进而提升性能。在实践中发现，合理调节该参数，性能会有1%~5%的提升。
+>  
+> **spark.reducer.maxSizeInFlight**：
+> **参数说明**：**该参数用于设置shuffle read task的buffer缓冲大小**，而这个buffer缓冲决定了每次能够拉取多少数据。
+> **调优建议**：如果作业可用的内存资源较为充足的话，可以适当增加这个参数的大小（比如96m），从而减少拉取数据的次数，也就可以减少网络传输的次数，进而提升性能。在实践中发现，合理调节该参数，性能会有1%~5%的提升。
+>  
+> **spark.shuffle.io.maxRetries & spark.shuffle.io.retryWait**：
+> **spark.shuffle.io.retryWait**：huffle read task从shuffle write task所在节点拉取属于自己的数据时，如果因为网络异常导致拉取失败，是会自动进行重试的。**该参数就代表了可以重试的最大次数**。（默认是3次）
+> **spark.shuffle.io.retryWait**：**该参数代表了每次重试拉取数据的等待间隔**。（默认为5s）
+> **调优建议**：一般的调优都是将重试次数调高，不调整时间间隔。
+>  
+> **spark.shuffle.memoryFraction**：
+> **参数说明**：该参数代表了Executor内存中，分配给shuffle read task进行聚合操作的内存比例。
+>  
+> **spark.shuffle.manager**
+> **参数说明**：**该参数用于设置shufflemanager的类型**（默认为sort）。Spark1.5x以后有三个可选项：
+>
+> ```lua
+> Hash：spark1.x版本的默认值，HashShuffleManager
+> Sort：spark2.x版本的默认值，普通机制，当shuffle read task 的数量小于等于spark.shuffle.sort.bypassMergeThreshold参数，自动开启bypass 机制
+> tungsten-sort：
+> ```
+>
+> **spark.shuffle.sort.bypassMergeThreshold**
+> **参数说明**：当ShuffleManager为SortShuffleManager时，如果shuffle read task的数量小于这个阈值（默认是200），则shuffle write过程中不会进行排序操作。
+> **调优建议**：当你使用SortShuffleManager时，如果的确不需要排序操作，那么建议将这个参数调大一些
+>  
+> **spark.shuffle.consolidateFiles**：
+> **参数说明**：如果使用HashShuffleManager，该参数有效。如果设置为true，那么就会开启consolidate机制，也就是开启优化后的HashShuffleManager。
+> **调优建议**：如果的确不需要SortShuffleManager的排序机制，那么除了使用bypass机制，还可以尝试将spark.shffle.manager参数手动指定为hash，使用HashShuffleManager，同时开启consolidate机制。在实践中尝试过，发现**其性能比开启了bypass机制的SortShuffleManager要高出10%~30%**。
