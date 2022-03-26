@@ -317,3 +317,76 @@ public:
 };
 ```
 
+## 树
+
+### JZ55 二叉树的深度
+
+### 描述
+
+> 输入一棵二叉树，求该树的深度。从根结点到叶结点依次经过的结点（含根、叶结点）形成树的一条路径，最长路径的长度为树的深度，根节点的深度视为 1 。
+
+### 思路
+
+> 利用递归的思想，从底部开始，只要有结点，那它的高度就从0加1，之后当前结点的高度为左右子树高度的最大值加1，则该递归成型。
+
+### 代码
+
+```c++
+class Solution {
+public:
+    int TreeDepth(TreeNode* pRoot) {
+        if ( !pRoot ) {
+            return 0;
+        }
+        int left = TreeDepth(pRoot->left);
+        int right = TreeDepth(pRoot->right);
+        return max(left, right) + 1;
+    }
+};
+```
+
+### JZ77 按之字形顺序打印二叉树
+
+#### 题目描述
+
+> 请实现一个函数按照之字形打印二叉树，即第一行按照从左到右的顺序打印，第二层按照从右至左的顺序打印，第三行按照从左到右的顺序打印，其他行以此类推。
+
+#### 思路
+
+> 利用层序遍历的思想，再在每层之间遍历的时候加入一个vector用来记录当层的元素值（利用一个for循环就可以把单层的元素直接遍历完，并且把当前元素的子节点也添加进入了queue），之后在每层最后判断当前层数的奇偶性，偶数就直接调用stl里面的reverse(begin(),end())翻转vector，然后再push_back进返回的二维vector。
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    vector<vector<int> > Print(TreeNode* pRoot) {
+        vector<vector<int>> ret;
+        queue<TreeNode*> que;
+        if(!pRoot){
+            return ret;
+        }
+        que.push(pRoot);
+        bool even = false;
+        while(!que.empty()){
+            vector<int> vec; //注意vec位置
+            int size = que.size();
+            for(int i=0;i<size;i++){
+                TreeNode* tem = que.front();
+                que.pop();
+                vec.push_back(tem->val);
+                if(tem->left)
+                    que.push(tem->left);
+                if(tem->right)
+                    que.push(tem->right);
+            }
+            if(even)
+                std::reverse(vec.begin(),vec.end());
+            ret.push_back(vec);
+            even = !even;
+        }
+        return ret;
+    }
+};
+```
+
