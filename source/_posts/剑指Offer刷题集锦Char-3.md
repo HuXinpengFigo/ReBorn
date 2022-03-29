@@ -390,3 +390,128 @@ public:
 };
 ```
 
+### JZ79 判断是不是平衡二叉树
+
+#### 描述
+
+> 输入一棵节点数为 n 二叉树，判断该二叉树是否是平衡二叉树。
+>
+> 在这里，我们只需要考虑其平衡性，不需要考虑其是不是排序二叉树
+>
+> **平衡二叉树**（Balanced Binary Tree），具有以下性质：它是一棵空树或它的左右两个子树的高度差的绝对值不超过1，并且左右两个子树都是一棵平衡二叉树
+>
+> 
+>
+> ### 输入描述：
+>
+> 输入一棵二叉树的根节点
+>
+> ### 返回值描述：
+>
+> 输出一个布尔类型的值
+
+#### 思路
+
+> 求二叉树高度的变体，每次求一个结点的高度需要求左右子树的高度，则在求左右子树高度时增加一个判断左右子树是否高度差大于1即可。
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    bool result = true; //全局变量记录是否非平衡树
+    int getHeight(TreeNode* pRoot) {
+        if ( !pRoot ) {
+            return 0;
+        }
+        int left = 0, right = 0;
+        if ( pRoot->left) {
+            left = getHeight(pRoot->left) + 1;
+        }
+        if ( pRoot->right ) {
+            right = getHeight(pRoot->right) + 1;
+        }
+        if (abs(left-right)>1) { //判断左右子树是否高度差大于1
+            result = false; 
+        }
+        return max(left,right);
+    }
+    bool IsBalanced_Solution(TreeNode* pRoot) {
+        getHeight(pRoot);
+        return result;
+    }
+};
+```
+
+### JZ54 二叉搜索树的第k个节点
+
+#### 描述
+
+> 给定一棵结点数为n 二叉搜索树，请找出其中的第 k 小的TreeNode结点值。
+>
+> 1.返回第k小的节点值即可
+>
+> 2.不能查找的情况，如二叉树为空，则返回-1，或者k大于n等等，也返回-1
+>
+> 3.保证n个节点的值不一样
+>
+> 
+>
+> 如输入{5,3,7,2,4,6,8},3时，二叉树{5,3,7,2,4,6,8}如下图所示：
+>
+> ![img](/img/F732B49BA33ECC72FF97FF7BDE2ACF69.png)
+>
+> 该二叉树所有节点按结点值升序排列后可得[2,3,4,5,6,7,8]，所以第3个结点的结点值为4，故返回对应结点值为4的结点即可。
+
+#### 思路
+
+> 使用中序遍历把结点值都存储到一个vector中，最后返回这个vector第k个数就可（k-1索引）；
+>
+> 注意考虑遍历完整个树vector大小还是没有k大的情况。
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    /**
+     * 代码中的类名、方法名、参数名已经指定，请勿修改，直接返回方法规定的值即可
+     *
+     * 
+     * @param proot TreeNode类 
+     * @param k int整型 
+     * @return int整型
+     */
+    vector<int> result;
+    
+    int KthNode(TreeNode* proot, int k) {
+        // write code here
+        if (!proot) return -1;
+        inOrder(proot);
+        if (k == 0 || k > result.size())
+            return -1;
+        return result[k-1];
+    }
+    
+    void inOrder(TreeNode* node) { //中序遍历，值插入vector
+        if ( !node ) return;
+        if (node->left)
+            inOrder(node->left);
+        result.push_back(node->val);
+        if (node->right)
+            inOrder(node->right);
+    }
+};
+```
+
+
+
+
+
+
+
+### **JZ29** **顺时针打印矩阵**
+
+
+
+### **JZ38** **字符串的排列**
