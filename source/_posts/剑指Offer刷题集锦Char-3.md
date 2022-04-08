@@ -504,9 +504,222 @@ public:
 };
 ```
 
+### **JZ82** **二叉树中和为某一值的路径(一)**
 
+#### 描述
 
+> 给定一个二叉树root和一个值 sum ，判断是否有从根节点到叶子节点的节点值之和等于 sum 的路径。
+>
+> 1.该题路径定义为从树的根结点开始往下一直到叶子结点所经过的结点
+>
+> 2.叶子节点是指没有子节点的节点
+>
+> 3.路径只能从父节点到子节点，不能从子节点到父节点
+>
+> 4.总节点数目为n
 
+![img](/img/999991351_1596786493913_8BFB3E9513755565DC67D86744BB6159.png)
+
+5->4->11->2的结点和为22
+
+#### 思路
+
+> 递归题，当传入的root为null时返回false，如果root没有左右子树且值为和（实际上是减完之后剩下的数值），其它情况递归到左右子树，以左右子树的结果为准。
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    
+    // 递归求解，当root为空返回false，当到达叶子节点，并且和位sum返回true
+    // 其他情况递归调用左右子树
+    
+    bool hasPathSum(TreeNode* root, int sum) {
+        if ( root == nullptr ) return false;
+        if ( !root -> left && !root->right ) return sum == root->val;
+        return hasPathSum(root->left, sum - root->val) || hasPathSum(root->right, sum - root->val);
+    }
+};
+```
+
+### **JZ34** **二叉树中和为某一值的路径(二)**
+
+#### 描述
+
+> 输入一颗二叉树的根节点root和一个整数expectNumber，找出二叉树中结点值的和为expectNumber的所有路径。
+>
+> 1.该题路径定义为从树的根结点开始往下一直到叶子结点所经过的结点
+>
+> 2.叶子节点是指没有子节点的节点
+>
+> 3.路径只能从父节点到子节点，不能从子节点到父节点
+>
+> 4.总节点数目为n
+>
+> 如二叉树root为{10,5,12,4,7},expectNumber为22
+>
+> ![img](/img/0A4B8F161306A7054899D42C0C6937FD.png)
+>
+> 则合法路径有[[10,5,7],[10,12]]
+
+#### 思路
+
+> DFS + 回溯的思路，设立一个全局变量vector<int> 保存当前DFS搜索到的路径，每次新到一个非空node都将该node的val存入vector，如果该路径和就为我们想要的值，则把这个vector存入最终返回的结果中，如果不相等且没有子节点了，则回溯，弹出vector尾部val。
+>
+> 
+>
+> 关键点：
+>
+> 回溯相当于后序遍历，是在递归完左右子树之后才`pop_back()`的。
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    vector<int> nums;
+    vector<vector<int>> res;
+    void dfs(TreeNode* node, int num) {
+        if ( node == nullptr ) {
+            return;
+        }
+        nums.push_back(node->val);
+        if ( !node->left && !node->right && node->val == num) {
+            res.push_back(nums); //找到了想要的路径，将nums push_back进res
+        }
+        if(node->left) {
+            dfs(node->left,num - node->val);
+        }
+        if(node->right) {
+            dfs(node->right,num - node->val);
+        }
+        nums.pop_back(); //回溯
+    }
+    vector<vector<int>> FindPath(TreeNode* root,int expectNumber) {
+        dfs(root, expectNumber);
+        return res;
+    }
+};
+```
+
+#### **JZ68** **二叉搜索树的最近公共祖先**
+
+#### 描述
+
+> 给定一个二叉搜索树, 找到该树中两个指定节点的最近公共祖先。
+>
+> 1.对于该题的最近的公共祖先定义:对于有根树T的两个节点p、q，最近公共祖先LCA(T,p,q)表示一个节点x，满足x是p和q的祖先且x的深度尽可能大。在这里，一个节点也可以是它自己的祖先.
+>
+> 2.二叉搜索树是若它的左子树不空，则左子树上所有节点的值均小于它的根节点的值； 若它的右子树不空，则右子树上所有节点的值均大于它的根节点的值
+>
+> 3.所有节点的值都是唯一的。
+>
+> 4.p、q 为不同节点且均存在于给定的二叉搜索树中。
+>
+> 数据范围:
+>
+> 3<=节点总数<=10000
+>
+> 0<=节点值<=10000
+
+#### 思路
+
+> 由于搜索二叉树的定义，我们可以知道往下搜索的时候，要么搜到p、q两点的祖先，要么搜到比p、q两点都大或者比p、q两点都小的结点。
+>
+> 这样当我们搜到第一个处于p、q两点数值区间内的结点，即为其共同祖先。
+
+#### 代码
+
+```c++
+class Solution {
+public:
+    int lowestCommonAncestor(TreeNode* root, int p, int q) {
+        // write code here
+        if ( root->val < p && root->val < q ) {
+            return lowestCommonAncestor(root->right,p,q);
+        }
+        else if ( root->val > p && root->val > q ) {
+            return lowestCommonAncestor(root->left,p,q);
+        }
+        return root->val;
+    }
+};
+```
+
+### **JZ86** **在二叉树中找到两个节点的最近公共祖先**
+
+#### 描述
+
+> 给定一棵二叉树(保证非空)以及这棵树上的两个节点对应的val值 o1 和 o2，请找到 o1 和 o2 的最近公共祖先节点。
+>
+> 数据范围：树上节点数满足 1≤*n*≤10^5 , 节点值val满足区间 [0,n)
+>
+> 要求：时间复杂度 O(n)
+>
+> 注：本题保证二叉树中每个节点的val值均不相同。
+>
+> 如当输入{3,5,1,6,2,0,8,#,#,7,4},5,1时，二叉树{3,5,1,6,2,0,8,#,#,7,4}如下图所示：
+>
+> ![img](https://uploadfiles.nowcoder.com/images/20211014/423483716_1634206667843/D2B5CA33BD970F64A6301FA75AE2EB22)
+>
+> 所以节点值为5和节点值为1的节点的最近公共祖先节点的节点值为3，所以对应的输出为3。
+>
+> 节点本身可以视为自己的祖先
+
+#### 思路
+
+> 根据以上定义，若 root 是p,q 的 最近公共祖先 ，则只可能为以下情况之一：
+>
+> 1. p 和 q 在root 的子树中，且分列 root 的 异侧（即分别在左、右子树中）；
+> 2. p=root ，且 q 在 root 的左或右子树中；
+> 3. q=root ，且 p 在 root 的左或右子树中；
+>
+> 考虑通过递归对二叉树进行先序遍历 (赋值为先序，回溯判断为后序)，当遇到节点 p 或 q 时返回。从底至顶回溯，当节点 p,q 在节点 root 的异侧时，节点 root 即为最近公共祖先，则向上返回 root 。
+>
+> 终止条件：
+>
+> 1. 当越过叶节点，则直接返回 null ；
+> 2. 当 root 等于 p,q ，则直接返回 root ；
+>
+> 递推工作：
+>
+> 1. 开启递归左子节点，返回值记为 left ；
+> 2. 开启递归右子节点，返回值记为 right ；
+>
+> 返回值：
+>
+>  根据 left 和 right ，可展开为四种情况；
+>
+> 1. 当 left 和 right 同时为空 ：说明 root 的左 / 右子树中都不包含 p,q ，返回 null ；
+> 2. 当 left 和 right 同时不为空 ：说明 p,q 分列在 root 的 异侧 （分别在 左 / 右子树），因此 root 为最近公共祖先，返回 root ；
+> 3. 当 left 为空 ，right 不为空 ：p,q 都不在 root 的左子树中，直接返回 right （此时right代表是right这边的）。
+> 4. 当 left不为空 ， right 为空 ：与情况 `3.` 同理；
+
+#### 代码
+
+```c++
+class Solution {
+public:
+
+    TreeNode *dfsRecursive( TreeNode* root, int o1, int o2 ){
+        if ( !root || root->val == o1 || root->val == o2 ) {
+            return root;
+        }
+        TreeNode *left = dfsRecursive(root->left, o1, o2);
+        TreeNode *right = dfsRecursive(root->right, o1, o2);
+        if ( left && right ) return root;
+        if ( !left && right ) return right; // 注意这里是返回右子树的结果，不是单纯一个结点
+        if ( !right && left ) return left; // 同理，返回左子树的结果
+        return NULL;
+    }
+    
+    
+    int lowestCommonAncestor(TreeNode* root, int o1, int o2) {
+        return dfsRecursive(root, o1, o2)->val;
+    }
+};
+```
 
 
 
